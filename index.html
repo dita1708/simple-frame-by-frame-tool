@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>sigh lol</title>
+  <style>
+    :root{--bg:#121212;--panel:#1e1e1e;--muted:#9aa1a6;--accent:#4ea3ff}
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .app{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:16px;box-sizing:border-box;height:100%}
+    .panel{background:var(--panel);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
+    h2{margin:4px 0 12px;font-size:16px}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+    .row{display:flex;gap:8px;align-items:center}
+    button{background:transparent;border:1px solid rgba(255,255,255,0.08);color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+    button.active{border-color:var(--accent);box-shadow:0 6px 14px rgba(78,163,255,0.12)}
+    input[type=range]{width:100%}
+    #stage-wrap{display:flex;align-items:center;justify-content:center;height:100%}
+    .canvas-holder{position:relative;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    canvas{display:block;border-radius:8px;image-rendering:pixelated}
+    .meta{margin-top:8px;color:var(--muted);font-size:13px}
+    .controls-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel" style="height:100%;">
+      <h2>Tools</h2>
+      <div class="row">
+        <button id="penBtn" class="active">Brush (b)</button>
+        <button id="eraserBtn">Eraser (e)</button>
+        <button id="clearBtn">Wipe (w)</button>
+      </div>
+<div class="row" style="align-items:center;gap:12px;">
+  <div>
+    <label>Color (c):</label>
+    <input id="colorPicker" type="color" value="#000000" style="width:120px;height:20px;border:none;cursor:pointer;">
+  </div>
+  
+  <div>
+    <label>Size (s): <span id="sizeLabel">4</span></label>
+    <input id="sizeRange" type="range" min="1" max="48" value="4" style="width:120px;height:20px;border:none;cursor:pointer;">
+  </div>
+</div>
+      <label><input id="onionToggle" type="checkbox" checked>Onion Skin (o)</label>
+      <style display: hidden><label>Opacity:<span id="opLabel">0.4</span></label></style>
+      <input id="onionRange" type="range" min="0" max="1" step="0.05" value="0.4" style=display: hidden>
+
+      <h2 style="margin-top:14px">Frames</h2>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="row">
+          <button id="prevFrame">◀</button>
+          <button id="nextFrame">▶</button>
+        </div>
+        <div class="row">
+          <button id="addFrame">＋ (a)</button>
+          <button id="delFrame">－ (d)</button>
+        </div>
+      </div>
+      <div class="meta">Frame <span id="frameIndex">1</span> / <span id="frameCount">1</span></div>
+
+      <h2 style="margin-top:14px">Playback</h2>
+      <div class="row">
+        <button id="playBtn">Play</button>
+        <label style="margin-left:8px">FPS</label>
+        <input id="fps" type="number" value="12" min="1" max="60" style="width:64px;margin-left:6px;background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:6px;color:inherit">
+      </div>
+         <h2 style="margin-top:14px">Export</h2>
+      <div style="height:8px"></div>
+      <div class="row">
+        <button id="exportFrame">Current Frame (PNG)</button>
+        <button id="exportAllFrames">All Frames (ZIP)</button>
+        <button id="exportWebM">Video (WebM)</button>
+      </div>
+
+      <h2 style="margin-top:14px">Canvas</h2>
+<div class="row" style="align-items:center; gap:8px;">
+  <div style="display:flex; flex-direction:column;">
+    <label>Width</label>
+    <input id="canvasW" type="number" value="567" min="16" style="width:80px;background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:6px;color:inherit">
+  </div>
+
+  <div style="display:flex; flex-direction:column;">
+    <label>Height</label>
+    <input id="canvasH" type="number" value="567" min="16" style="width:80px;background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:6px;color:inherit">
+  </div>
+
+  <button id="resizeBtn" style="display:flex; justify-content:flex-end; margin-top:20px;">Apply</button>
+</div>
+<br>
+ <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+  <button id="saveProjectBtn">Save</button>
+  <input type="file" id="loadProjectInput" style="display:none">
+  <button id="loadProjectBtn">Load</button>
+</div>
+
+        
+        
+        
+        
+      <div style="height:12px"></div>
+      <div class="meta">an expert blame their skills, not their tools... <br><br>well, i'm not an expert so it's ok for me to make something ugly out of this :P</div>
+    </div>
+
+    <div id="stage-wrap">
+      <div class="canvas-holder" style="padding:16px;">
+        <canvas id="drawCanvas" width="567" height="567" style="position:relative;display:block;cursor:crosshair;background:#ffffff;"></canvas>
+        <canvas id="onionCanvas" width="567" height="567" style="position:absolute;left:16px;top:16px;pointer-events:none;opacity:0.4;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSZip for ZIP export -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<script>
+(() => {
+  const penBtn = document.getElementById('penBtn');
+  const eraserBtn = document.getElementById('eraserBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const sizeRange = document.getElementById('sizeRange');
+  const sizeLabel = document.getElementById('sizeLabel');
+  const onionToggle = document.getElementById('onionToggle');
+  const onionRange = document.getElementById('onionRange');
+  const opLabel = document.getElementById('opLabel');
+  const prevFrameBtn = document.getElementById('prevFrame');
+  const nextFrameBtn = document.getElementById('nextFrame');
+  const addFrameBtn = document.getElementById('addFrame');
+  const delFrameBtn = document.getElementById('delFrame');
+  const frameIndex = document.getElementById('frameIndex');
+  const frameCount = document.getElementById('frameCount');
+  const playBtn = document.getElementById('playBtn');
+  const fpsInput = document.getElementById('fps');
+  const exportFrameBtn = document.getElementById("exportFrame");
+  const exportAllFramesBtn = document.getElementById("exportAllFrames");
+  const exportWebMBtn = document.getElementById("exportWebM");
+
+  const canvasW = document.getElementById('canvasW');
+  const canvasH = document.getElementById('canvasH');
+  const resizeBtn = document.getElementById('resizeBtn');
+  const drawCanvas = document.getElementById('drawCanvas');
+  const onionCanvas = document.getElementById('onionCanvas');
+  const ctx = drawCanvas.getContext('2d');
+  const onionCtx = onionCanvas.getContext('2d');
+
+    
+    let brushColor = "#000000"; // default black
+const colorPicker = document.getElementById("colorPicker");
+colorPicker.addEventListener("input", () => {
+  brushColor = colorPicker.value;
+});
+
+    
+  let brushSize = Number(sizeRange.value);
+  let drawing = false;
+  let last = null;
+  let mode = 'pen';
+
+  let frames = [];
+  let current = 0;
+
+  function createBlankDataURL(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cctx = c.getContext('2d');
+    cctx.fillStyle = '#ffffff';
+    cctx.fillRect(0,0,w,h);
+    return c.toDataURL('image/png');
+  }
+
+  function ensureFrames(){
+    if(frames.length === 0) frames.push(createBlankDataURL(drawCanvas.width, drawCanvas.height));
+    updateFrameUI();
+  }
+
+  function updateFrameUI(){
+    frameIndex.textContent = (current+1);
+    frameCount.textContent = frames.length;
+    onionCanvas.style.opacity = onionRange.value;
+  }
+
+  function loadFrame(idx){
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+      ctx.drawImage(img,0,0);
+      renderOnion();
+      updateFrameUI();
+    };
+    img.src = frames[idx];
+  }
+
+  function saveCurrentFrame(){
+    frames[current] = drawCanvas.toDataURL('image/png');
+    updateFrameUI();
+  }
+
+  function addFrame(after=true){
+    saveCurrentFrame();
+    const w = drawCanvas.width, h = drawCanvas.height;
+    const blank = createBlankDataURL(w,h);
+    if(after){
+      frames.splice(current+1,0,blank);
+      current++;
+    } else {
+      frames.splice(current,0,blank);
+    }
+    loadFrame(current);
+  }
+
+  function deleteFrame(idx){
+    if(frames.length<=1) return;
+    frames.splice(idx,1);
+    if(current >= frames.length) current = frames.length-1;
+    loadFrame(current);
+  }
+
+  function renderOnion(){
+    onionCtx.clearRect(0,0,onionCanvas.width,onionCanvas.height);
+    if(!onionToggle.checked) return;
+
+    const prev = current - 1;
+    if(prev >= 0){
+      const img = new Image();
+      img.onload = () => {
+        onionCtx.globalAlpha = Number(onionRange.value) || 0.4;
+        onionCtx.drawImage(img, 0, 0);
+        onionCtx.globalAlpha = 1.0;
+      };
+      img.src = frames[prev];
+    }
+  }
+
+  function pointerPos(e){
+    const r = drawCanvas.getBoundingClientRect();
+    if(e.touches && e.touches[0]){
+      return {x: (e.touches[0].clientX - r.left)*(drawCanvas.width/r.width), y: (e.touches[0].clientY - r.top)*(drawCanvas.height/r.height)};
+    }
+    return {x:(e.clientX - r.left)*(drawCanvas.width/r.width), y:(e.clientY - r.top)*(drawCanvas.height/r.height)};
+  }
+
+
+// ===== Undo System =====
+let historyStack = [];
+
+function saveHistory() {
+  historyStack.push(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+  if (historyStack.length > 50) historyStack.shift(); // limit history
+}
+
+function undoLastStroke() {
+  if (historyStack.length > 0) {
+    const imgData = historyStack.pop();
+    ctx.putImageData(imgData, 0, 0);
+    saveCurrentFrame();
+  }
+}
+
+  function startDraw(e){
+  drawing = true; 
+  last = pointerPos(e);
+
+  saveHistory(); // <-- add here
+
+  if(mode === 'eraser') {
+  ctx.globalCompositeOperation = 'destination-out';
+} else {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = brushColor;  // <-- use selected color
+}
+
+
+  ctx.lineWidth = brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(last.x, last.y);
+  e.preventDefault();
+}
+
+  function moveDraw(e){
+    if(!drawing) return;
+    const p = pointerPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last = p;
+    e.preventDefault();
+  }
+  function endDraw(e){
+    if(!drawing) return;
+    ctx.closePath();
+    drawing = false;
+    saveCurrentFrame();
+    renderOnion();
+    e && e.preventDefault();
+  }
+
+  drawCanvas.addEventListener('mousedown', startDraw);
+  drawCanvas.addEventListener('touchstart', startDraw, {passive:false});
+  window.addEventListener('mousemove', moveDraw);
+  drawCanvas.addEventListener('touchmove', moveDraw, {passive:false});
+  window.addEventListener('mouseup', endDraw);
+  drawCanvas.addEventListener('touchend', endDraw);
+
+  penBtn.addEventListener('click', ()=>{ mode='pen'; penBtn.classList.add('active'); eraserBtn.classList.remove('active'); });
+  eraserBtn.addEventListener('click', ()=>{ mode='eraser'; eraserBtn.classList.add('active'); penBtn.classList.remove('active'); });
+  clearBtn.addEventListener('click', ()=>{ ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,drawCanvas.width,drawCanvas.height); saveCurrentFrame(); renderOnion(); });
+
+  sizeRange.addEventListener('input', ()=>{ brushSize = Number(sizeRange.value); sizeLabel.textContent = brushSize; });
+  onionRange.addEventListener('input', ()=>{ opLabel.textContent = onionRange.value; onionCanvas.style.opacity = onionRange.value; renderOnion(); });
+  onionToggle.addEventListener('change', renderOnion);
+
+  prevFrameBtn.addEventListener('click', ()=>{ saveCurrentFrame(); if(current>0) current--; loadFrame(current); });
+  nextFrameBtn.addEventListener('click', ()=>{ saveCurrentFrame(); if(current<frames.length-1) current++; loadFrame(current); });
+  addFrameBtn.addEventListener('click', ()=>{ addFrame(true); updateFrameUI(); });
+  delFrameBtn.addEventListener('click', ()=>{ deleteFrame(current); updateFrameUI(); });
+
+  playBtn.addEventListener('click', ()=>{
+    if(playBtn.dataset.playing === '1'){
+      stopPlayback();
+    } else {
+      startPlayback();
+    }
+  });
+
+  let playInterval = null;
+  function startPlayback(){
+    saveCurrentFrame();
+    const fps = Math.max(1, Number(fpsInput.value)||12);
+    let idx = 0;
+    playBtn.textContent = 'Stop';
+    playBtn.dataset.playing = '1';
+    playInterval = setInterval(()=>{
+      const img = new Image(); img.onload = ()=>{ ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height); ctx.drawImage(img,0,0); }; img.src = frames[idx];
+      idx = (idx+1) % frames.length;
+    }, 1000/fps);
+  }
+  function stopPlayback(){
+    clearInterval(playInterval); playInterval = null; playBtn.textContent = 'Play'; playBtn.dataset.playing = '0'; loadFrame(current);
+  }
+
+  // Export current frame
+  exportFrameBtn.addEventListener("click", () => {
+    saveCurrentFrame();
+    const a = document.createElement("a");
+    a.href = frames[current];
+    a.download = `frame-${current+1}.png`;
+    a.click();
+  });
+
+  // Export all frames as ZIP
+  exportAllFramesBtn.addEventListener("click", () => {
+    saveCurrentFrame();
+    const zip = new JSZip();
+    frames.forEach((dataUrl, i) => {
+      const base64Data = dataUrl.split(",")[1];
+      zip.file(`frame-${i + 1}.png`, base64Data, { base64: true });
+    });
+    zip.generateAsync({ type: "blob" }).then((content) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(content);
+      a.download = "frames.zip";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  });
+
+  // Export WebM
+  exportWebMBtn.addEventListener("click", async () => {
+    saveCurrentFrame();
+    const fps = Math.max(1, Number(fpsInput.value) || 12);
+
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width = drawCanvas.width;
+    tmpCanvas.height = drawCanvas.height;
+    const tmpCtx = tmpCanvas.getContext("2d");
+
+    const stream = tmpCanvas.captureStream(fps);
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    const chunks = [];
+
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "animation.webm";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    recorder.start();
+
+    for (let i = 0; i < frames.length; i++) {
+      await new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          tmpCtx.fillStyle = "#ffffff";
+          tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+          tmpCtx.drawImage(img, 0, 0, tmpCanvas.width, tmpCanvas.height);
+          setTimeout(res, 1000 / fps);
+        };
+        img.src = frames[i];
+      });
+    }
+
+    setTimeout(() => recorder.stop(), (frames.length * 1000) / fps + 500);
+  });
+
+  resizeBtn.addEventListener('click', ()=>{
+    const w = Math.max(4, Number(canvasW.value));
+    const h = Math.max(4, Number(canvasH.value));
+    const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; const tctx = tmp.getContext('2d');
+    const newFrames = frames.map(d => {
+      const im = new Image(); im.src = d;
+      return new Promise(res => { im.onload = ()=>{ tctx.fillStyle='#ffffff'; tctx.fillRect(0,0,w,h); tctx.drawImage(im,0,0,w,h); res(tmp.toDataURL('image/png')); }; im.onerror = ()=>{ res(createBlankDataURL(w,h)); } });
+    });
+    Promise.all(newFrames).then(arr=>{ frames = arr; drawCanvas.width = onionCanvas.width = w; drawCanvas.height = onionCanvas.height = h; loadFrame(0); current = 0; });
+  });
+
+  ensureFrames(); loadFrame(0);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    function saveProject() {
+  const project = {
+    frames,
+    current,
+    brushColor,
+    brushSize,
+    onionChecked: onionToggle.checked,
+    onionOpacity: onionRange.value
+  };
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(project));
+  const a = document.createElement("a");
+  a.href = dataStr;
+  a.download = "sigh-lol-project.json";
+  a.click();
+}
+    
+    
+    
+    document.getElementById("saveProjectBtn").addEventListener("click", saveProject);
+
+    
+    
+    
+    
+    
+    document.getElementById("loadProjectBtn").addEventListener("click", () => {
+  document.getElementById("loadProjectInput").click();
+});
+
+document.getElementById("loadProjectInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const project = JSON.parse(event.target.result);
+      frames = project.frames || [createBlankDataURL(drawCanvas.width, drawCanvas.height)];
+      current = project.current || 0;
+      brushColor = project.brushColor || "#000000";
+      brushSize = project.brushSize || 4;
+      sizeRange.value = brushSize;
+      sizeLabel.textContent = brushSize;
+      onionToggle.checked = project.onionChecked ?? true;
+      onionRange.value = project.onionOpacity ?? 0.4;
+      renderOnion();
+      loadFrame(current);
+    } catch(err) {
+      alert("Failed to load project: " + err);
+    }
+  };
+  reader.readAsText(file);
+});
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ // ===== Keyboard Shortcuts =====
+let sizeInputMode = false;
+let sizeBuffer = "";
+
+document.addEventListener("keydown", (e) => {
+  const tag = e.target.tagName.toLowerCase();
+  if(tag === "input" || tag === "textarea") return;
+
+  const key = e.key;
+  const k = key.toLowerCase(); // normalize
+
+  // ===== Enter size input mode =====
+  if(!sizeInputMode && k === "s"){
+    sizeInputMode = true;
+    sizeBuffer = "";
+    return;
+  }
+
+  // ===== Size input mode =====
+  if(sizeInputMode){
+    if(/^[0-9]$/.test(k)){
+      sizeBuffer += k;
+      if(sizeBuffer.length === 2){
+        brushSize = Number(sizeBuffer);
+        sizeRange.value = brushSize;
+        sizeLabel.textContent = brushSize;
+        sizeInputMode = false;
+      }
+      return; // only block number keys
+    } else if(k === "escape"){
+      sizeInputMode = false;
+      sizeBuffer = "";
+      return;
+    }
+    // other keys (arrows, a/d, b/e/c) now work
+  }
+
+  // Brush (B)
+  if (k === "b") { mode = "pen"; penBtn.style.background = "#555"; eraserBtn.style.background = ""; }
+  // Eraser (E)
+  if (k === "e") { mode = "eraser"; eraserBtn.style.background = "#555"; penBtn.style.background = ""; }
+  // Wipe (W)
+  if (k === "w") clearBtn.click();
+    
+    // Colour Picker (C)
+if (k === "c") colorPicker.click();
+    
+    
+     // Onion Skin Toggle (O)
+  if (k === "o") {
+    onionToggle.checked = !onionToggle.checked;
+    renderOnion();
+  }
+    
+  // Undo
+  if ((e.ctrlKey || e.metaKey) && k === "z") { undoLastStroke(); e.preventDefault(); }
+  // Add / Delete frame
+  if (k === "a") addFrame(true);
+  if (k === "d") deleteFrame(current);
+  // Navigate frames
+  if (k === "arrowleft") { saveCurrentFrame(); if(current>0) current--; loadFrame(current); }
+  if (k === "arrowright") { saveCurrentFrame(); if(current<frames.length-1) current++; loadFrame(current); }
+});
+
+
+    
+    
+})();
+</script>
+</body>
+</html>
