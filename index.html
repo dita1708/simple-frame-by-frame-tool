@@ -385,7 +385,7 @@ function undoLastStroke() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "animation.webm";
+      a.download = "video.webm";
       a.click();
       URL.revokeObjectURL(url);
     };
@@ -445,7 +445,7 @@ function undoLastStroke() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(project));
   const a = document.createElement("a");
   a.href = dataStr;
-  a.download = "sigh-lol-project.json";
+  a.download = "z.json";
   a.click();
 }
     
