@@ -27,22 +27,22 @@
     <div class="panel" style="height:100%;">
       <h2>Tools</h2>
       <div class="row">
-        <button id="penBtn" class="active">Brush (b)</button>
-        <button id="eraserBtn">Eraser (e)</button>
-        <button id="clearBtn">Wipe (w)</button>
+        <button id="penBtn" class="active">Brush [b]</button>
+        <button id="eraserBtn">Eraser [e]</button>
+        <button id="clearBtn">Wipe [w]</button>
       </div>
 <div class="row" style="align-items:center;gap:12px;">
   <div>
-    <label>Color (c):</label>
+    <label>Color [c]:</label>
     <input id="colorPicker" type="color" value="#000000" style="width:120px;height:20px;border:none;cursor:pointer;">
   </div>
   
   <div>
-    <label>Size (s): <span id="sizeLabel">4</span></label>
+    <label>Size [s00]: <span id="sizeLabel">4</span></label>
     <input id="sizeRange" type="range" min="1" max="48" value="4" style="width:120px;height:20px;border:none;cursor:pointer;">
   </div>
 </div>
-      <label><input id="onionToggle" type="checkbox" checked>Onion Skin (o)</label>
+      <label><input id="onionToggle" type="checkbox" checked>Onion Skin [o]</label>
       <style display: hidden><label>Opacity:<span id="opLabel">0.4</span></label></style>
       <input id="onionRange" type="range" min="0" max="1" step="0.05" value="0.4" style=display: hidden>
 
@@ -53,24 +53,24 @@
           <button id="nextFrame">▶</button>
         </div>
         <div class="row">
-          <button id="addFrame">＋ (a)</button>
-          <button id="delFrame">－ (d)</button>
+          <button id="addFrame">＋ [a]</button>
+          <button id="delFrame">－ [d]</button>
         </div>
       </div>
-      <div class="meta">Frame <span id="frameIndex">1</span> / <span id="frameCount">1</span></div>
+      <div class="meta"><span id="frameIndex">1</span> / <span id="frameCount">1</span></div>
 
       <h2 style="margin-top:14px">Playback</h2>
       <div class="row">
-        <button id="playBtn">Play</button>
-        <label style="margin-left:8px">FPS</label>
+        <button id="playBtn">Play [p]</button>
+        <label style="margin-left:8px">FPS [f00]</label>
         <input id="fps" type="number" value="12" min="1" max="60" style="width:64px;margin-left:6px;background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:6px;color:inherit">
       </div>
          <h2 style="margin-top:14px">Export</h2>
       <div style="height:8px"></div>
       <div class="row">
-        <button id="exportFrame">Current Frame (PNG)</button>
-        <button id="exportAllFrames">All Frames (ZIP)</button>
-        <button id="exportWebM">Video (WebM)</button>
+        <button id="exportFrame">PNG [x1]</button>
+        <button id="exportAllFrames">ZIP [x2]</button>
+        <button id="exportWebM">WebM [x3]</button>
       </div>
 
       <h2 style="margin-top:14px">Canvas</h2>
@@ -88,18 +88,25 @@
   <button id="resizeBtn" style="display:flex; justify-content:flex-end; margin-top:20px;">Apply</button>
 </div>
 <br>
- <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-  <button id="saveProjectBtn">Save</button>
-  <input type="file" id="loadProjectInput" style="display:none">
-  <button id="loadProjectBtn">Load</button>
-</div>
+<table style="width:100%; margin-top:10px;">
+  <tr>
+    <td style="text-align:left;">
+      <button id="resetBtn">Reset [r]</button>
+    </td>
+    <td style="text-align:right;">
+      <button id="saveProjectBtn">Save [s]</button>
+      <button id="loadProjectBtn">Load [l]</button>
+      <input type="file" id="loadProjectInput" style="display:none">
+    </td>
+  </tr>
+</table>
+
 
         
         
         
         
-
- <div style="height:12px"></div>
+      <div style="height:12px"></div>
       <div class="meta">don't you sometimes just feel like doodling stupid stuffs, but opening any software feels too much?<br><br>so, yeah, no layer, no copy feature, no nothing.<br><br>might even give an error, so better to save states.</div>
     </div>
 
@@ -144,6 +151,30 @@
   const ctx = drawCanvas.getContext('2d');
   const onionCtx = onionCanvas.getContext('2d');
 
+    
+    // Apply saved canvas size if available
+const savedW = localStorage.getItem("canvasWidth");
+const savedH = localStorage.getItem("canvasHeight");
+if (savedW && savedH) {
+  drawCanvas.width = Number(savedW);
+  drawCanvas.height = Number(savedH);
+  onionCanvas.width = Number(savedW);
+  onionCanvas.height = Number(savedH);
+  canvasW.value = savedW;
+  canvasH.value = savedH;
+}
+
+    
+    
+  resizeBtn.addEventListener("click", () => {
+  const w = Math.max(16, Number(canvasW.value));
+  const h = Math.max(16, Number(canvasH.value));
+  resizeCanvas(w, h);
+  console.log(`📐 Canvas resized to ${w}x${h}`);
+});
+  
+    
+    
     
     let brushColor = "#000000"; // default black
 const colorPicker = document.getElementById("colorPicker");
@@ -216,6 +247,51 @@ colorPicker.addEventListener("input", () => {
     loadFrame(current);
   }
 
+    
+    
+    
+    
+   function resizeCanvas(newW, newH) {
+  const tmp = document.createElement("canvas");
+  tmp.width = newW;
+  tmp.height = newH;
+  const tctx = tmp.getContext("2d");
+
+  const newFrames = frames.map((dataUrl) => {
+    const img = new Image();
+    img.src = dataUrl;
+    tctx.clearRect(0, 0, newW, newH);
+    tctx.drawImage(img, 0, 0, newW, newH);
+    return tmp.toDataURL();
+  });
+
+  frames = newFrames;
+
+  drawCanvas.width = newW;
+  drawCanvas.height = newH;
+  ctx.clearRect(0, 0, newW, newH);
+  const img = new Image();
+  img.onload = () => ctx.drawImage(img, 0, 0);
+  img.src = frames[current];
+
+  onionCanvas.width = newW;
+  onionCanvas.height = newH;
+
+  canvasW.value = newW;
+  canvasH.value = newH;
+
+  saveCurrentFrame();
+  renderOnion();
+}
+ 
+    
+    
+    
+    
+    
+    
+    
+    
   function renderOnion(){
     onionCtx.clearRect(0,0,onionCanvas.width,onionCanvas.height);
     if(!onionToggle.checked) return;
@@ -231,6 +307,45 @@ colorPicker.addEventListener("input", () => {
       img.src = frames[prev];
     }
   }
+    
+    
+    
+    function resizeCanvas(newW, newH) {
+  const tmp = document.createElement("canvas");
+  tmp.width = newW;
+  tmp.height = newH;
+  const tctx = tmp.getContext("2d");
+
+  const newFrames = frames.map((dataUrl) => {
+    const img = new Image();
+    img.src = dataUrl;
+    tctx.clearRect(0, 0, newW, newH);
+    tctx.drawImage(img, 0, 0, newW, newH);
+    return tmp.toDataURL();
+  });
+
+  frames = newFrames;
+  drawCanvas.width = newW;
+  drawCanvas.height = newH;
+  drawCtx.clearRect(0, 0, newW, newH);
+  drawCtx.drawImage(tmp, 0, 0);
+
+  onionCanvas.width = newW;
+  onionCanvas.height = newH;
+ 
+  saveCurrentFrame();
+  renderFrame();
+}
+
+   
+    
+    
+    
+    
+    
+    
+    
+    
 
   function pointerPos(e){
     const r = drawCanvas.getBoundingClientRect();
@@ -241,21 +356,42 @@ colorPicker.addEventListener("input", () => {
   }
 
 
-// ===== Undo System =====
+// ===== Undo / Redo System =====
 let historyStack = [];
+let redoStack = [];
 
 function saveHistory() {
   historyStack.push(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
   if (historyStack.length > 50) historyStack.shift(); // limit history
+  redoStack = []; // clear redo on new action
 }
 
 function undoLastStroke() {
   if (historyStack.length > 0) {
     const imgData = historyStack.pop();
+    redoStack.push(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
     ctx.putImageData(imgData, 0, 0);
     saveCurrentFrame();
   }
 }
+
+function redoLastStroke() {
+  if (redoStack.length > 0) {
+    const imgData = redoStack.pop();
+    historyStack.push(ctx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+    ctx.putImageData(imgData, 0, 0);
+    saveCurrentFrame();
+  }
+}
+
+    
+    
+    
+    
+    
+    
+    
+    
 
   function startDraw(e){
   drawing = true; 
@@ -263,6 +399,10 @@ function undoLastStroke() {
 
   saveHistory(); // <-- add here
 
+      
+      
+      
+      
   if(mode === 'eraser') {
   ctx.globalCompositeOperation = 'destination-out';
 } else {
@@ -329,7 +469,7 @@ function undoLastStroke() {
     saveCurrentFrame();
     const fps = Math.max(1, Number(fpsInput.value)||12);
     let idx = 0;
-    playBtn.textContent = 'Stop';
+    playBtn.textContent = 'Stop [s]';
     playBtn.dataset.playing = '1';
     playInterval = setInterval(()=>{
       const img = new Image(); img.onload = ()=>{ ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height); ctx.drawImage(img,0,0); }; img.src = frames[idx];
@@ -337,93 +477,147 @@ function undoLastStroke() {
     }, 1000/fps);
   }
   function stopPlayback(){
-    clearInterval(playInterval); playInterval = null; playBtn.textContent = 'Play'; playBtn.dataset.playing = '0'; loadFrame(current);
+    clearInterval(playInterval); playInterval = null; playBtn.textContent = 'Play [p]'; playBtn.dataset.playing = '0'; loadFrame(current);
   }
 
-  // Export current frame
-  exportFrameBtn.addEventListener("click", () => {
-    saveCurrentFrame();
+  // ---------- Export functions (single source of truth) ----------
+let lastExportAt = 0; // guard to avoid repeated exports
+
+function exportGuarded(fn) {
+  const now = Date.now();
+  if (now - lastExportAt < 500) {
+    // ignore if last export was less than 500ms ago
+    console.log("Export ignored (debounced)");
+    return;
+  }
+  lastExportAt = now;
+  fn();
+}
+
+function exportCurrentFrame() {
+  saveCurrentFrame();
+  const a = document.createElement("a");
+  a.href = frames[current];
+  a.download = `frame-${current+1}.png`;
+  // trigger download
+  a.click();
+}
+
+function exportAllFramesAsZip() {
+  saveCurrentFrame();
+  const zip = new JSZip();
+  frames.forEach((dataUrl, i) => {
+    const base64Data = dataUrl.split(",")[1];
+    zip.file(`frame-${i + 1}.png`, base64Data, { base64: true });
+  });
+  zip.generateAsync({ type: "blob" }).then((content) => {
     const a = document.createElement("a");
-    a.href = frames[current];
-    a.download = `frame-${current+1}.png`;
+    a.href = URL.createObjectURL(content);
+    a.download = "frames.zip";
     a.click();
+    // cleanup after a short delay to avoid revoking before download starts
+    setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
   });
+}
 
-  // Export all frames as ZIP
-  exportAllFramesBtn.addEventListener("click", () => {
-    saveCurrentFrame();
-    const zip = new JSZip();
-    frames.forEach((dataUrl, i) => {
-      const base64Data = dataUrl.split(",")[1];
-      zip.file(`frame-${i + 1}.png`, base64Data, { base64: true });
+async function exportWebMVideo() {
+  saveCurrentFrame();
+  const fps = Math.max(1, Number(fpsInput.value) || 12);
+
+  const tmpCanvas = document.createElement("canvas");
+  tmpCanvas.width = drawCanvas.width;
+  tmpCanvas.height = drawCanvas.height;
+  const tmpCtx = tmpCanvas.getContext("2d");
+
+  const stream = tmpCanvas.captureStream(fps);
+  const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+  const chunks = [];
+
+  recorder.ondataavailable = (e) => chunks.push(e.data);
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "video.webm";
+    a.click();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+  };
+
+  recorder.start();
+
+  for (let i = 0; i < frames.length; i++) {
+    await new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        tmpCtx.fillStyle = "#ffffff";
+        tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+        tmpCtx.drawImage(img, 0, 0, tmpCanvas.width, tmpCanvas.height);
+        setTimeout(res, 1000 / fps);
+      };
+      img.src = frames[i];
     });
-    zip.generateAsync({ type: "blob" }).then((content) => {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(content);
-      a.download = "frames.zip";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-  });
+  }
 
-  // Export WebM
-  exportWebMBtn.addEventListener("click", async () => {
-    saveCurrentFrame();
-    const fps = Math.max(1, Number(fpsInput.value) || 12);
+  setTimeout(() => recorder.stop(), (frames.length * 1000) / fps + 200);
+}
 
-    const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = drawCanvas.width;
-    tmpCanvas.height = drawCanvas.height;
-    const tmpCtx = tmpCanvas.getContext("2d");
+// ---------- Wire buttons to functions (instead of anonymous logic) ----------
+exportFrameBtn.removeEventListener?.("click", undefined); // noop-safe attempt
+exportAllFramesBtn.removeEventListener?.("click", undefined);
+exportWebMBtn.removeEventListener?.("click", undefined);
 
-    const stream = tmpCanvas.captureStream(fps);
-    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-    const chunks = [];
+exportFrameBtn.addEventListener("click", () => exportGuarded(exportCurrentFrame));
+exportAllFramesBtn.addEventListener("click", () => exportGuarded(exportAllFramesAsZip));
+exportWebMBtn.addEventListener("click", () => exportGuarded(exportWebMVideo));
 
-    recorder.ondataavailable = (e) => chunks.push(e.data);
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "video/webm" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "video.webm";
-      a.click();
-      URL.revokeObjectURL(url);
-    };
 
-    recorder.start();
 
-    for (let i = 0; i < frames.length; i++) {
-      await new Promise((res) => {
-        const img = new Image();
-        img.onload = () => {
-          tmpCtx.fillStyle = "#ffffff";
-          tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-          tmpCtx.drawImage(img, 0, 0, tmpCanvas.width, tmpCanvas.height);
-          setTimeout(res, 1000 / fps);
-        };
-        img.src = frames[i];
-      });
-    }
 
-    setTimeout(() => recorder.stop(), (frames.length * 1000) / fps + 500);
-  });
+// Local save/load
+function saveToLocal() {
+  const project = {
+    frames,
+    current,
+    brushColor,
+    brushSize,
+    onionChecked: onionToggle.checked,
+    onionOpacity: onionRange.value
+  };
+  localStorage.setItem("animatorProject", JSON.stringify(project));
+}
 
-  resizeBtn.addEventListener('click', ()=>{
-    const w = Math.max(4, Number(canvasW.value));
-    const h = Math.max(4, Number(canvasH.value));
-    const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; const tctx = tmp.getContext('2d');
-    const newFrames = frames.map(d => {
-      const im = new Image(); im.src = d;
-      return new Promise(res => { im.onload = ()=>{ tctx.fillStyle='#ffffff'; tctx.fillRect(0,0,w,h); tctx.drawImage(im,0,0,w,h); res(tmp.toDataURL('image/png')); }; im.onerror = ()=>{ res(createBlankDataURL(w,h)); } });
-    });
-    Promise.all(newFrames).then(arr=>{ frames = arr; drawCanvas.width = onionCanvas.width = w; drawCanvas.height = onionCanvas.height = h; loadFrame(0); current = 0; });
-  });
+function loadFromLocal() {
+  const saved = localStorage.getItem("animatorProject");
+  if (!saved) return;
+  try {
+    const project = JSON.parse(saved);
+    frames = project.frames || [createBlankDataURL(drawCanvas.width, drawCanvas.height)];
+    current = project.current || 0;
+    brushColor = project.brushColor || "#000000";
+    brushSize = project.brushSize || 4;
+    sizeRange.value = brushSize;
+    sizeLabel.textContent = brushSize;
+    onionToggle.checked = project.onionChecked ?? true;
+    onionRange.value = project.onionOpacity ?? 0.4;
+    renderOnion();
+    loadFrame(current);
+  } catch (err) {
+    console.error("Failed to load local project:", err);
+  }
+}
 
-  ensureFrames(); loadFrame(0);
-    
-    
-    
+// Auto-save when leaving
+window.addEventListener("beforeunload", saveToLocal);
+
+// Startup
+ensureFrames();
+if (!sessionStorage.getItem("justReset")) {
+  loadFromLocal();
+} else {
+  sessionStorage.removeItem("justReset"); // 👈 clear the flag so it doesn’t stick
+}
+
     
     
     
@@ -490,6 +684,76 @@ document.getElementById("loadProjectInput").addEventListener("change", (e) => {
 
     
     
+  // Reset project (clear localStorage + reload page)
+document.getElementById("resetBtn").addEventListener("click", () => {
+  localStorage.removeItem("animatorProject");
+  sessionStorage.setItem("justReset", "1"); // 👈 add this flag
+  location.reload();
+});
+    
+    
+    let resetHoldTimer;
+
+// Detect keydown for R
+document.addEventListener("keydown", (e) => {
+  if ((e.key === "r" || e.key === "R") && !resetHoldTimer) {
+    resetHoldTimer = setTimeout(() => {
+      localStorage.removeItem("animatorProject");
+      sessionStorage.setItem("justReset", "1");
+      location.reload();
+    }, 500); // hold for 0.5 seconds
+  }
+});
+
+// Cancel if released before 0.5s
+document.addEventListener("keyup", (e) => {
+  if (e.key === "r" || e.key === "R") {
+    clearTimeout(resetHoldTimer);
+    resetHoldTimer = null;
+  }
+});
+
+
+    // 🔑 Hold-to-trigger shortcuts (2s)
+let holdTimers = {};
+
+// Map of keys -> actions
+const holdActions = {
+  r: () => { // Reset
+    localStorage.removeItem("animatorProject");
+    sessionStorage.setItem("justReset", "1");
+    location.reload();
+  },
+
+  s: () => { // Save
+    document.getElementById("saveProjectBtn").click();
+  },
+  l: () => { // Load
+    document.getElementById("loadProjectBtn").click();
+  }
+};
+
+// Keydown handler
+document.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+  if (holdActions[key] && !holdTimers[key]) {
+    holdTimers[key] = setTimeout(() => {
+      holdActions[key]();
+      holdTimers[key] = null;
+    }, 500); // 0.5s hold
+  }
+});
+
+// Keyup handler (cancel hold if released early)
+document.addEventListener("keyup", (e) => {
+  const key = e.key.toLowerCase();
+  if (holdTimers[key]) {
+    clearTimeout(holdTimers[key]);
+    holdTimers[key] = null;
+  }
+});
+
+    
     
     
     
@@ -510,6 +774,26 @@ document.addEventListener("keydown", (e) => {
   const key = e.key;
   const k = key.toLowerCase(); // normalize
 
+    
+    
+        // Undo
+if ((e.ctrlKey || e.metaKey) && !e.shiftKey && k === "z") {
+  undoLastStroke();
+  e.preventDefault();
+}
+
+// Redo (Cmd+Shift+Z or Ctrl+Y)
+if ((e.ctrlKey || e.metaKey) && ((e.shiftKey && k === "z") || k === "y")) {
+  redoLastStroke();
+  e.preventDefault();
+}
+
+
+
+    
+    
+    
+    
   // ===== Enter size input mode =====
   if(!sizeInputMode && k === "s"){
     sizeInputMode = true;
@@ -533,9 +817,142 @@ document.addEventListener("keydown", (e) => {
       sizeBuffer = "";
       return;
     }
-    // other keys (arrows, a/d, b/e/c) now work
   }
 
+    
+    
+   let fpsCommandMode = false;
+let fpsBuffer = "";
+let exportCommandMode = false;
+
+document.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+
+  // 🎬 FPS command mode
+  if (key === "f" && !fpsCommandMode) {
+    fpsCommandMode = true;
+    fpsBuffer = "";
+    console.log("⚡ FPS input mode (type numbers, e.g. 04 = 4fps)");
+    return;
+  }
+
+  if (fpsCommandMode) {
+    if (/^[0-9]$/.test(key)) fpsBuffer += key;
+
+    if (key === "enter" || fpsBuffer.length >= 2) {
+      const newFps = Number(fpsBuffer);
+      if (newFps > 0) {
+        fps = newFps;
+        fpsInput.value = fps;   // 👈 updates your FPS input
+        console.log("🎬 FPS set to", fps);
+      }
+      fpsCommandMode = false;
+      fpsBuffer = "";
+    }
+    return; // stop here so it doesn’t fall through
+  }});
+
+// ---------- Keyboard export handling: call functions directly (no .click()) ----------
+window.addEventListener("keyup", (e) => {
+  const key = e.key.toLowerCase();
+
+  if (key === "x" && !exportCommandMode) {
+    exportCommandMode = true;
+    console.log("📦 Export mode (1 = PNG, 2 = ZIP, 3 = WebM)");
+    return;
+  }
+
+  if (exportCommandMode) {
+    if (key === "1") {
+      console.log("⬇ Export current frame PNG");
+      exportGuarded(exportCurrentFrame);
+    } else if (key === "2") {
+      console.log("⬇ Export all frames ZIP");
+      exportGuarded(exportAllFramesAsZip);
+    } else if (key === "3") {
+      console.log("⬇ Export WebM video");
+      exportGuarded(exportWebMVideo);
+    }
+    exportCommandMode = false;
+  }
+});
+
+ 
+    
+    // --- Resize command mode (v + w/h + 3 digits) ---
+let resizeCommandMode = false;
+let resizeTarget = null; // "w" or "h"
+let resizeBuffer = "";
+
+window.addEventListener("keyup", (e) => {
+  const key = e.key.toLowerCase();
+
+  // enter resize mode
+  if (key === "v" && !resizeCommandMode) {
+    resizeCommandMode = true;
+    resizeTarget = null;
+    resizeBuffer = "";
+    console.log("📐 Resize mode: press w/h then 3 digits");
+    return;
+  }
+
+  if (resizeCommandMode) {
+    // choose target (w/h)
+    if (!resizeTarget) {
+      if (key === "w" || key === "h") {
+        resizeTarget = key;
+        console.log(`📐 Target: ${resizeTarget === "w" ? "width" : "height"}`);
+      } else {
+        resizeCommandMode = false;
+        console.log("❌ Resize mode cancelled");
+      }
+      return;
+    }
+
+    // collect digits
+    if (/^[0-9]$/.test(key)) {
+      resizeBuffer += key;
+
+      // once 3 digits collected → resize
+      if (resizeBuffer.length === 3) {
+        const newSize = parseInt(resizeBuffer, 10);
+        if (resizeTarget === "w") {
+          resizeCanvas(newSize, drawCanvas.height);
+          console.log(`📐 Width set to ${newSize}`);
+        } else if (resizeTarget === "h") {
+          resizeCanvas(drawCanvas.width, newSize);
+          console.log(`📐 Height set to ${newSize}`);
+        }
+
+        // reset
+        resizeCommandMode = false;
+        resizeTarget = null;
+        resizeBuffer = "";
+      }
+    }
+  }
+});
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   // Brush (B)
   if (k === "b") { mode = "pen"; penBtn.style.background = "#555"; eraserBtn.style.background = ""; }
   // Eraser (E)
@@ -553,8 +970,17 @@ if (k === "c") colorPicker.click();
     renderOnion();
   }
     
-  // Undo
-  if ((e.ctrlKey || e.metaKey) && k === "z") { undoLastStroke(); e.preventDefault(); }
+    
+         // play and stop
+    if (key === "p") {
+    startPlayback(); 
+    return;
+  }
+        if (key === "s") {
+    stopPlayback(); 
+    return;
+  }
+
   // Add / Delete frame
   if (k === "a") addFrame(true);
   if (k === "d") deleteFrame(current);
@@ -562,10 +988,8 @@ if (k === "c") colorPicker.click();
   if (k === "arrowleft") { saveCurrentFrame(); if(current>0) current--; loadFrame(current); }
   if (k === "arrowright") { saveCurrentFrame(); if(current<frames.length-1) current++; loadFrame(current); }
 });
-
-
     
-    
+
 })();
 </script>
 </body>
